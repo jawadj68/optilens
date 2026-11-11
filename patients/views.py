@@ -1,3 +1,10 @@
+import platform
+import sqlite3
+import subprocess
+from datetime import datetime
+
+import django
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
@@ -229,6 +236,100 @@ def clinical_review(request, pk):
             "remaining": ClinicalRecord.objects.filter(patient__isnull=True)
             .values("dossier_nr").distinct().count(),
             "optilens_nav": "clinical_unmatched",
+        },
+    )
+
+
+BACKUP_DIR = settings.DATA_DIR / "backups"
+
+
+def _sqlite_path():
+    db = settings.DATABASES["default"]
+    return db["NAME"] if db["ENGINE"].endswith("sqlite3") else None
+
+
+def _git_info() -> dict:
+    def run(*args):
+        try:
+            out = subprocess.run(
+                ["git", *args], cwd=settings.BASE_DIR, capture_output=True,
+                text=True, encoding="utf-8", errors="replace", timeout=5,
+            )
+            return out.stdout.strip() if out.returncode == 0 else ""
+        except (OSError, subprocess.TimeoutExpired):
+            return ""
+
+    return {
+        "commit": run("log", "-1", "--format=%h — %s (%cd)", "--date=format:%d/%m/%Y %H:%M"),
+        "remote": run("remote", "get-url", "github") or run("remote", "get-url", "origin"),
+        "changes": run("status", "--porcelain"),
+        "unpushed": run("rev-list", "--count", "@{u}..HEAD"),
+    }
+
+
+@login_required
+def settings_page(request):
+    db_path = _sqlite_path()
+    if request.method == "POST" and request.POST.get("action") == "backup":
+        if not _staff_required(request.user):
+            messages.error(request, "Sauvegarde réservée au personnel autorisé.")
+        elif not db_path:
+            messages.error(request, "La sauvegarde intégrée ne concerne que SQLite.")
+        else:
+            BACKUP_DIR.mkdir(exist_ok=True)
+            target = BACKUP_DIR / f"optilens-{datetime.now():%Y%m%d-%H%M%S}.sqlite3"
+            with sqlite3.connect(db_path) as src, sqlite3.connect(target) as dst:
+                src.backup(dst)
+            messages.success(request, f"Sauvegarde créée : {target.name}")
+        return redirect("optilens:settings")
+
+    backups = []
+    if BACKUP_DIR.is_dir():
+        for f in sorted(BACKUP_DIR.glob("*.sqlite3"), reverse=True)[:10]:
+            st = f.stat()
+            backups.append({
+                "name": f.name,
+                "size_mb": st.st_size / 1_048_576,
+                "date": datetime.fromtimestamp(st.st_mtime),
+            })
+
+    return render(
+        request,
+        "optilens/settings.html",
+        {
+            "db_engine": "SQLite" if db_path else "PostgreSQL",
+            "db_path": db_path,
+            "db_size_mb": db_path.stat().st_size / 1_048_576 if db_path and db_path.exists() else None,
+            "counts": {
+                "Patients": Patient.objects.count(),
+                "Séances": PatientVisit.objects.count(),
+                "Fiches cliniques": ClinicalRecord.objects.count(),
+                "Fiches sans patient": ClinicalRecord.objects.filter(patient__isnull=True).count(),
+            },
+            "backups": backups,
+            "backup_dir": BACKUP_DIR,
+            "base_dir": settings.BASE_DIR,
+            "allowed_hosts": settings.ALLOWED_HOSTS,
+            "debug": settings.DEBUG,
+            "python_version": platform.python_version(),
+            "django_version": django.get_version(),
+            "git": _git_info(),
+            "can_backup": _staff_required(request.user),
+            "optilens_nav": "settings",
+        },
+    )
+
+
+@login_required
+def help_page(request):
+    return render(
+        request,
+        "optilens/help.html",
+        {
+            "python_version": platform.python_version(),
+            "repo_url": _git_info()["remote"] or "https://github.com/jawadj68/optilens.git",
+            "base_dir": settings.BASE_DIR,
+            "optilens_nav": "help",
         },
     )
 

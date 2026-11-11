@@ -1,0 +1,86 @@
+{% extends "optilens/base.html" %}
+{% block browser_tab %}Paramètres{% endblock %}
+{% block page_title %}Paramètres{% endblock %}
+{% block content %}
+{% include "optilens/_nav.html" %}
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card shadow-sm mb-3">
+      <div class="card-header fw-semibold"><i class="bi bi-database"></i> Base de données</div>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Type</span><span>{{ db_engine }}</span></li>
+        {% if db_path %}
+        <li class="list-group-item"><span class="text-muted d-block small">Fichier</span><code>{{ db_path }}</code></li>
+        <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Taille</span><span>{{ db_size_mb|floatformat:1 }} Mo</span></li>
+        {% endif %}
+        {% for label, n in counts.items %}
+        <li class="list-group-item d-flex justify-content-between"><span class="text-muted">{{ label }}</span><span class="fw-semibold">{{ n }}</span></li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="card shadow-sm mb-3">
+      <div class="card-header fw-semibold"><i class="bi bi-gear"></i> Système</div>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item"><span class="text-muted d-block small">Dossier du programme</span><code>{{ base_dir }}</code></li>
+        <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Python</span><span>{{ python_version }}</span></li>
+        <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Django</span><span>{{ django_version }}</span></li>
+        <li class="list-group-item d-flex justify-content-between">
+          <span class="text-muted">Mode</span>
+          <span>{% if debug %}<span class="badge text-bg-warning">Développement</span>{% else %}<span class="badge text-bg-success">Production</span>{% endif %}</span>
+        </li>
+        <li class="list-group-item"><span class="text-muted d-block small">Adresses autorisées (OPTILENS_ALLOWED_HOSTS)</span>{{ allowed_hosts|join:", " }}</li>
+      </ul>
+      <div class="card-footer small text-muted">Ces réglages se modifient dans le fichier <code>.env</code> du dossier du programme, puis en redémarrant Optilens.</div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card shadow-sm mb-3">
+      <div class="card-header fw-semibold d-flex align-items-center">
+        <span><i class="bi bi-shield-check"></i> Sauvegardes</span>
+        {% if can_backup and db_path %}
+        <form method="post" class="ms-auto">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="backup">
+          <button class="btn btn-sm btn-primary" type="submit"><i class="bi bi-download"></i> Sauvegarder maintenant</button>
+        </form>
+        {% endif %}
+      </div>
+      <ul class="list-group list-group-flush">
+        {% for b in backups %}
+        <li class="list-group-item d-flex justify-content-between">
+          <span class="small"><code>{{ b.name }}</code></span>
+          <span class="small text-muted">{{ b.date|date:"d/m/Y H:i" }} · {{ b.size_mb|floatformat:1 }} Mo</span>
+        </li>
+        {% empty %}
+        <li class="list-group-item text-muted">Aucune sauvegarde pour l’instant.</li>
+        {% endfor %}
+      </ul>
+      <div class="card-footer small text-muted">
+        Dossier : <code>{{ backup_dir }}</code><br>
+        Copiez régulièrement une sauvegarde sur une clé USB ou un autre PC : si ce disque tombe en panne, les sauvegardes disparaissent avec lui.
+      </div>
+    </div>
+
+    <div class="card shadow-sm mb-3">
+      <div class="card-header fw-semibold"><i class="bi bi-github"></i> Version du programme</div>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item"><span class="text-muted d-block small">Dernière modification</span>{{ git.commit|default:"—" }}</li>
+        <li class="list-group-item"><span class="text-muted d-block small">Dépôt</span><code>{{ git.remote|default:"—" }}</code></li>
+        <li class="list-group-item">
+          {% if git.changes %}
+          <span class="badge text-bg-warning">Fichiers modifiés non enregistrés (commit)</span>
+          {% endif %}
+          {% if git.unpushed and git.unpushed != "0" %}
+          <span class="badge text-bg-warning">{{ git.unpushed }} commit(s) non envoyé(s) sur GitHub</span>
+          {% endif %}
+          {% if not git.changes and git.unpushed == "0" %}
+          <span class="badge text-bg-success">À jour avec GitHub</span>
+          {% endif %}
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}
