@@ -45,6 +45,17 @@ python manage.py import_optilens_visits --commit --seance-only
 
 Uses [fp5dump](https://github.com/qwesda/fp5dump) (in `tools\fp5dump`). One patient row per name (latest FileMaker revision).
 
+### Clinical forms (CS / CS ancien)
+
+```powershell
+python manage.py import_optilens_cs --commit
+```
+
+Records are linked automatically only when the name is unambiguous (same words, or the
+patient has the record's surname and first name, with a single such patient). Everything
+else is reviewed in **Fiches non liées → Commencer la vérification**. Links made there are
+kept when the import is run again.
+
 ### CSV export (alternative)
 
 1. Export CSV from FileMaker 5 (field names as headers).

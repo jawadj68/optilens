@@ -15,5 +15,6 @@ urlpatterns = [
     path("patients/<int:pk>/delete/", views.patient_delete, name="patient_delete"),
     path("clinical/unmatched/", views.clinical_unmatched_list, name="clinical_unmatched_list"),
     path("clinical/<int:pk>/", views.clinical_record_detail, name="clinical_record_detail"),
+    path("clinical/<int:pk>/review/", views.clinical_review, name="clinical_review"),
     path("import/", views.import_csv, name="import_csv"),
 ]

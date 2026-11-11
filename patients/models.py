@@ -89,6 +89,11 @@ class ClinicalRecord(models.Model):
         CS = "cs", "CS (fiche clinique)"
         CSOLD = "csold", "CS ancien"
 
+    class LinkMethod(models.TextChoices):
+        AUTO = "auto", "Automatique (nom identique)"
+        MANUAL = "manual", "Lié manuellement"
+        CREATED = "created", "Patient créé depuis la fiche"
+
     patient = models.ForeignKey(
         Patient,
         on_delete=models.CASCADE,
@@ -96,6 +101,13 @@ class ClinicalRecord(models.Model):
         null=True,
         blank=True,
         help_text="Vide si aucun patient Optilens ne correspond au nom CS",
+    )
+    link_method = models.CharField(
+        max_length=10,
+        choices=LinkMethod.choices,
+        blank=True,
+        verbose_name="Type de lien",
+        help_text="Les liens manuels ne sont jamais modifiés par un nouvel import",
     )
     dossier_nr = models.IntegerField(db_index=True, verbose_name="Nr. dossier")
     source = models.CharField(max_length=10, choices=Source.choices)

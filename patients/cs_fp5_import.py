@@ -106,9 +106,18 @@ def import_clinical_records_from_fp5(
                 skipped += 1
                 continue
 
-            patient = name_index.by_name(nom) if nom else None
-            if patient is None and dossier_nr is not None:
-                patient = name_index.by_nb(dossier_nr)
+            legacy_key = f"{source}-fp5-{record_id}"
+            existing = ClinicalRecord.objects.filter(legacy_fm_key=legacy_key).only(
+                "patient_id", "link_method"
+            ).first()
+            keep_link = existing is not None and existing.link_method in (
+                ClinicalRecord.LinkMethod.MANUAL,
+                ClinicalRecord.LinkMethod.CREATED,
+            )
+            if keep_link:
+                patient = existing.patient
+            else:
+                patient = name_index.by_name(nom) if nom else None
 
             if patient is None and not import_unmatched:
                 skipped += 1
@@ -116,7 +125,6 @@ def import_clinical_records_from_fp5(
                     unmatched_names.append(nom)
                 continue
 
-            legacy_key = f"{source}-fp5-{record_id}"
             name_snap = ((nom or "").strip() or normalize_person_name(nom))[:220]
 
             if dry_run:
@@ -128,6 +136,11 @@ def import_clinical_records_from_fp5(
 
             defaults = {
                 "patient": patient,
+                "link_method": (
+                    existing.link_method if keep_link
+                    else ClinicalRecord.LinkMethod.AUTO if patient
+                    else ""
+                ),
                 "dossier_nr": dossier_nr or 0,
                 "source": source,
                 "record_date": row.get("record_date"),

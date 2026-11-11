@@ -14,6 +14,9 @@
   </a>
   <span class="badge text-bg-warning ms-2">Sans patient lié</span>
   {% endif %}
+  <a class="btn btn-primary btn-sm ms-2" href="{% url 'optilens:clinical_review' pk=record.pk %}">
+    {% if record.patient_id %}Changer le patient lié{% else %}Lier à un patient{% endif %}
+  </a>
 </div>
 <div class="card shadow-sm mb-3">
   <div class="card-body">

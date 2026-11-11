@@ -40,6 +40,10 @@ def _decode_value(raw: bytes | Any, encoding: str) -> str:
         return ""
     if isinstance(raw, bytes):
         return raw.decode(encoding, errors="replace").strip()
+    if isinstance(raw, dict):
+        # Long/styled text is split into numbered chunks; keys starting with 0xFF hold styling.
+        chunks = [v for k, v in sorted(raw.items()) if isinstance(v, bytes) and not k.startswith(b"\xff")]
+        return b"".join(chunks).decode(encoding, errors="replace").strip()
     return str(raw).strip()
 
 

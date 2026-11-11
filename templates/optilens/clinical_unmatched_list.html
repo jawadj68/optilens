@@ -3,10 +3,18 @@
 {% block page_title %}Fiches CS sans patient{% endblock %}
 {% block content %}
 {% include "optilens/_nav.html" %}
-<p class="text-muted mb-3">
-  {{ total_unmatched }} fiche(s) importée(s) sans correspondance patient
-  {% if q %} — {{ filtered_count }} après filtre{% endif %}
-</p>
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+  <p class="text-muted mb-0">
+    {{ total_unmatched }} fiche(s) sans patient, soit {{ unmatched_dossiers }} dossier(s)
+    (CS et CS ancien sont deux copies du même dossier)
+    {% if q %} — {{ filtered_count }} après filtre{% endif %}
+  </p>
+  {% if first_unmatched %}
+  <a class="btn btn-primary btn-sm ms-auto" href="{% url 'optilens:clinical_review' pk=first_unmatched.pk %}">
+    <i class="bi bi-check2-square"></i> Commencer la vérification
+  </a>
+  {% endif %}
+</div>
 <form class="row g-2 mb-3" method="get">
   <div class="col-auto flex-grow-1">
     <input class="form-control" type="search" name="q" value="{{ q }}" placeholder="Nom, dossier, mot-clé…" autofocus>
@@ -36,6 +44,7 @@
           <td>{{ cr.get_source_display }}</td>
           <td class="text-end">
             <a class="btn btn-sm btn-outline-secondary" href="{% url 'optilens:clinical_record_detail' pk=cr.pk %}">Voir</a>
+            <a class="btn btn-sm btn-primary" href="{% url 'optilens:clinical_review' pk=cr.pk %}">Lier</a>
           </td>
         </tr>
         {% empty %}

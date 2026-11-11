@@ -8,6 +8,7 @@ from django.views.decorators.http import require_GET, require_POST
 from .forms import PatientCsvImportForm, PatientForm, PatientVisitForm
 from .import_services import import_patients_from_csv
 from .models import ClinicalRecord, Patient, PatientVisit
+from .patient_match import get_name_index, normalize_person_name
 from .patient_search import patient_search_queryset
 
 
@@ -133,7 +134,100 @@ def clinical_unmatched_list(request):
             "page": page,
             "q": q,
             "total_unmatched": ClinicalRecord.objects.filter(patient__isnull=True).count(),
+            "unmatched_dossiers": ClinicalRecord.objects.filter(patient__isnull=True)
+            .values("dossier_nr").distinct().count(),
+            "first_unmatched": ClinicalRecord.objects.filter(patient__isnull=True)
+            .order_by("dossier_nr", "pk").first(),
             "filtered_count": paginator.count,
+            "optilens_nav": "clinical_unmatched",
+        },
+    )
+
+
+def _same_person_records(record: ClinicalRecord):
+    """The CS and CS ancien copies of one dossier, so a single decision covers both."""
+    name = normalize_person_name(record.patient_name_snapshot)
+    return [
+        r for r in ClinicalRecord.objects.filter(dossier_nr=record.dossier_nr)
+        if r.pk == record.pk or normalize_person_name(r.patient_name_snapshot) == name
+    ]
+
+
+def _next_unmatched(after: ClinicalRecord):
+    qs = ClinicalRecord.objects.filter(patient__isnull=True).exclude(dossier_nr=after.dossier_nr)
+    return (
+        qs.filter(dossier_nr__gt=after.dossier_nr).order_by("dossier_nr", "pk").first()
+        or qs.order_by("dossier_nr", "pk").first()
+    )
+
+
+def _patient_from_record(record: ClinicalRecord) -> Patient:
+    data = record.data or {}
+    return Patient.objects.create(
+        full_name=record.patient_name_snapshot.strip(),
+        phone=data.get("TELEPHONE:", "")[:80],
+        address=data.get("ADDRESSE:", ""),
+        profession=data.get("PROFESSION:", "")[:120],
+        notes=f"Créé depuis la fiche clinique CS, dossier {record.dossier_nr}.",
+    )
+
+
+@login_required
+def clinical_review(request, pk):
+    record = get_object_or_404(ClinicalRecord.objects.select_related("patient"), pk=pk)
+    group = _same_person_records(record)
+
+    if request.method == "POST":
+        action = request.POST.get("action")
+        if action == "unlink":
+            ClinicalRecord.objects.filter(pk__in=[r.pk for r in group]).update(
+                patient=None, link_method=""
+            )
+            messages.info(request, f"Dossier {record.dossier_nr} délié.")
+            return redirect("optilens:clinical_review", pk=record.pk)
+
+        if action == "link":
+            patient = get_object_or_404(Patient, pk=request.POST.get("patient_id"))
+            method = ClinicalRecord.LinkMethod.MANUAL
+        elif action == "create":
+            patient = _patient_from_record(record)
+            method = ClinicalRecord.LinkMethod.CREATED
+        else:
+            messages.error(request, "Action inconnue.")
+            return redirect("optilens:clinical_review", pk=record.pk)
+
+        ClinicalRecord.objects.filter(pk__in=[r.pk for r in group]).update(
+            patient=patient, link_method=method
+        )
+        messages.success(
+            request,
+            f"Dossier {record.dossier_nr} ({len(group)} fiche(s)) lié à « {patient.full_name} ».",
+        )
+        nxt = _next_unmatched(record)
+        if nxt:
+            return redirect("optilens:clinical_review", pk=nxt.pk)
+        return redirect("optilens:clinical_unmatched_list")
+
+    data = record.data or {}
+    suggestions = get_name_index().suggest(record.patient_name_snapshot, data.get("TELEPHONE:", ""))
+    search_q = request.GET.get("q", "").strip()
+    search_results = list(patient_search_queryset(search_q)[:15]) if search_q else []
+    nxt = _next_unmatched(record)
+    return render(
+        request,
+        "optilens/clinical_review.html",
+        {
+            "record": record,
+            "group": group,
+            "record_phone": data.get("TELEPHONE:", ""),
+            "record_address": data.get("ADDRESSE:", ""),
+            "record_referrer": data.get("REFERE PAR:1", ""),
+            "suggestions": suggestions,
+            "search_q": search_q,
+            "search_results": search_results,
+            "next_record": nxt,
+            "remaining": ClinicalRecord.objects.filter(patient__isnull=True)
+            .values("dossier_nr").distinct().count(),
             "optilens_nav": "clinical_unmatched",
         },
     )

@@ -1,0 +1,113 @@
+{% extends "optilens/base.html" %}
+{% block browser_tab %}Vérifier dossier {{ record.dossier_nr }}{% endblock %}
+{% block page_title %}Lier la fiche CS — dossier {{ record.dossier_nr }}{% endblock %}
+{% block content %}
+{% include "optilens/_nav.html" %}
+<div class="d-flex gap-2 mb-3 flex-wrap align-items-center">
+  <a class="btn btn-outline-secondary btn-sm" href="{% url 'optilens:clinical_unmatched_list' %}"><i class="bi bi-arrow-left"></i> Fiches non liées</a>
+  <a class="btn btn-outline-secondary btn-sm" href="{% url 'optilens:clinical_record_detail' pk=record.pk %}">Fiche complète</a>
+  {% if next_record %}
+  <a class="btn btn-outline-secondary btn-sm" href="{% url 'optilens:clinical_review' pk=next_record.pk %}">Passer <i class="bi bi-arrow-right"></i></a>
+  {% endif %}
+  <span class="text-muted small ms-auto">{{ remaining }} dossier(s) restant(s) à lier</span>
+</div>
+
+<div class="card shadow-sm mb-3">
+  <div class="card-body">
+    <p class="fs-5 mb-1"><strong>{{ record.patient_name_snapshot|default:"(sans nom)" }}</strong></p>
+    <p class="mb-1 small">
+      <span class="text-muted">Tél.:</span> {{ record_phone|default:"—" }}
+      &nbsp;·&nbsp; <span class="text-muted">Adresse:</span> {{ record_address|default:"—" }}
+      &nbsp;·&nbsp; <span class="text-muted">Référé par:</span> {{ record_referrer|default:"—" }}
+    </p>
+    <p class="mb-0 small text-muted">
+      {% for r in group %}{{ r.get_source_display }} ({{ r.record_date|default:"date inconnue" }}){% if not forloop.last %} + {% endif %}{% endfor %}
+      — la décision s’applique à {{ group|length }} fiche(s)
+    </p>
+    {% if record.patient_id %}
+    <hr>
+    <p class="mb-2">
+      Actuellement lié à
+      <a href="{% url 'optilens:patient_detail' pk=record.patient_id %}"><strong>{{ record.patient.full_name }}</strong></a>
+      <span class="badge text-bg-secondary">{{ record.get_link_method_display|default:"lien" }}</span>
+    </p>
+    <form method="post" class="d-inline">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="unlink">
+      <button class="btn btn-sm btn-outline-danger" type="submit">Délier (mauvais patient)</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card shadow-sm mb-3">
+  <div class="card-header fw-semibold">Patients proposés</div>
+  <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead>
+        <tr><th>Patient</th><th>Téléphone</th><th>Nb</th><th>Ressemblance</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for s in suggestions %}
+        <tr>
+          <td><a href="{% url 'optilens:patient_detail' pk=s.patient.pk %}" target="_blank">{{ s.patient.full_name }}</a></td>
+          <td>{{ s.patient.phone|default:"—" }}{% if s.same_phone %} <span class="badge text-bg-success">même tél.</span>{% endif %}</td>
+          <td>{{ s.patient.patient_nb|default:"—" }}</td>
+          <td>{{ s.percent }}%</td>
+          <td class="text-end">
+            <form method="post" class="d-inline">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="link">
+              <input type="hidden" name="patient_id" value="{{ s.patient.pk }}">
+              <button class="btn btn-sm btn-primary" type="submit">Lier</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-muted p-3">Aucun patient ressemblant — probablement un nouveau patient.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card shadow-sm mb-3">
+  <div class="card-header fw-semibold">Chercher un autre patient</div>
+  <div class="card-body">
+    <form class="row g-2" method="get">
+      <div class="col flex-grow-1">
+        <input class="form-control" type="search" name="q" value="{{ search_q }}" placeholder="Nom, téléphone, Nb…">
+      </div>
+      <div class="col-auto"><button class="btn btn-outline-primary" type="submit">Chercher</button></div>
+    </form>
+  </div>
+  {% if search_q %}
+  <ul class="list-group list-group-flush">
+    {% for p in search_results %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+      <span>
+        <a href="{% url 'optilens:patient_detail' pk=p.pk %}" target="_blank">{{ p.full_name }}</a>
+        <small class="text-muted">{{ p.phone }}{% if p.patient_nb %} · Nb {{ p.patient_nb }}{% endif %}</small>
+      </span>
+      <form method="post" class="d-inline">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="link">
+        <input type="hidden" name="patient_id" value="{{ p.pk }}">
+        <button class="btn btn-sm btn-primary" type="submit">Lier</button>
+      </form>
+    </li>
+    {% empty %}
+    <li class="list-group-item text-muted">Aucun résultat.</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</div>
+
+{% if not record.patient_id %}
+<form method="post" onsubmit="return confirm('Créer un nouveau patient « {{ record.patient_name_snapshot|escapejs }} » ?');">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="create">
+  <button class="btn btn-success" type="submit"><i class="bi bi-person-plus"></i> Nouveau patient depuis cette fiche</button>
+</form>
+{% endif %}
+{% endblock %}

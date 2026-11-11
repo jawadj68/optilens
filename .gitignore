@@ -3,4 +3,5 @@ __pycache__/
 *.pyc
 .env
 data/*.sqlite3
+data/backups/
 db.sqlite3
