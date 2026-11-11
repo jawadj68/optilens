@@ -9,6 +9,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET, require_POST
 
@@ -321,15 +322,17 @@ def settings_page(request):
 
 
 @login_required
-def help_page(request):
+def install_guide(request):
+    if not settings.INSTALL_GUIDE_TEMPLATE_PATH.is_file():
+        raise Http404
     return render(
         request,
-        "optilens/help.html",
+        settings.INSTALL_GUIDE_TEMPLATE,
         {
             "python_version": platform.python_version(),
             "repo_url": _git_info()["remote"] or "https://github.com/jawadj68/optilens.git",
             "base_dir": settings.BASE_DIR,
-            "optilens_nav": "help",
+            "optilens_nav": "install",
         },
     )
 

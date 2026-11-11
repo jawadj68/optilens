@@ -18,5 +18,5 @@ urlpatterns = [
     path("clinical/<int:pk>/review/", views.clinical_review, name="clinical_review"),
     path("import/", views.import_csv, name="import_csv"),
     path("parametres/", views.settings_page, name="settings"),
-    path("aide/", views.help_page, name="help"),
+    path("installation/", views.install_guide, name="install_guide"),
 ]

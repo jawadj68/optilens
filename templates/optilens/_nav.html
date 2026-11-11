@@ -4,5 +4,7 @@
   <a class="nav-link{% if optilens_nav == 'clinical_unmatched' %} active{% endif %}" href="{% url 'optilens:clinical_unmatched_list' %}">Fiches non liées</a>
   <a class="nav-link{% if optilens_nav == 'import' %} active{% endif %}" href="{% url 'optilens:import_csv' %}">Import CSV</a>
   <a class="nav-link ms-md-auto{% if optilens_nav == 'settings' %} active{% endif %}" href="{% url 'optilens:settings' %}"><i class="bi bi-gear"></i> Paramètres</a>
-  <a class="nav-link{% if optilens_nav == 'help' %} active{% endif %}" href="{% url 'optilens:help' %}"><i class="bi bi-question-circle"></i> Aide</a>
+  {% if show_install_guide %}
+  <a class="nav-link{% if optilens_nav == 'install' %} active{% endif %}" href="{% url 'optilens:install_guide' %}"><i class="bi bi-pc-display"></i> Installation Requirements</a>
+  {% endif %}
 </nav>

@@ -21,6 +21,9 @@ ALLOWED_HOSTS = [
     for h in os.environ.get("OPTILENS_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
     if h.strip()
 ]
+OPTILENS_HOSTNAME = "optilens"
+if OPTILENS_HOSTNAME not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(OPTILENS_HOSTNAME)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -34,6 +37,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "patients.middleware.FriendlyHostRedirectMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -54,12 +58,17 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "patients.context_processors.local_pages",
             ],
         },
     },
 ]
 
 WSGI_APPLICATION = "optilens_site.wsgi.application"
+
+# Kept out of Git (see .gitignore), so the page only exists on the PC that has the file.
+INSTALL_GUIDE_TEMPLATE = "local/installation_requirements.html"
+INSTALL_GUIDE_TEMPLATE_PATH = BASE_DIR / "templates" / INSTALL_GUIDE_TEMPLATE
 
 DATA_DIR = BASE_DIR / "data"
 DATA_DIR.mkdir(exist_ok=True)

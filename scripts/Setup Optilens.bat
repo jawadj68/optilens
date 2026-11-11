@@ -28,11 +28,17 @@ if not exist ".env" (
 echo Mise a jour de la base de donnees...
 ".venv\Scripts\python.exe" -W ignore manage.py migrate || goto :fail
 
+findstr /r /c:"^127\.0\.0\.1 *optilens *$" "%SystemRoot%\System32\drivers\etc\hosts" >nul
+if errorlevel 1 (
+    echo Ajout de l'adresse http://optilens - Windows va demander l'autorisation administrateur...
+    powershell -NoProfile -Command "Start-Process powershell -Verb RunAs -Wait -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File','\"%CD%\scripts\Add Optilens Address.ps1\"'"
+)
+
 echo.
 echo === Termine ===
 echo - Pour reprendre les donnees d'un autre PC : copiez optilens.sqlite3 dans le dossier data\
 echo - Pour une base vide, creez un utilisateur : .venv\Scripts\python manage.py createsuperuser
-echo - Pour demarrer : double-cliquez sur scripts\Run Optilens.bat
+echo - Pour demarrer : double-cliquez sur scripts\Run Optilens.bat (ouvre http://optilens:8002/)
 echo.
 pause
 exit /b 0
