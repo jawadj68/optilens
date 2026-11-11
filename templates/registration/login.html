@@ -1,0 +1,29 @@
+{% extends "optilens/base.html" %}
+{% block browser_tab %}Connexion{% endblock %}
+{% block page_title %}Connexion Optilens{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-5">
+    <div class="card shadow-sm">
+      <div class="card-body p-4">
+        <p class="text-muted small">Système patients — indépendant de la librairie.</p>
+        <form method="post">
+          {% csrf_token %}
+          {% if form.non_field_errors %}
+          <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+          {% endif %}
+          <div class="mb-3">
+            <label class="form-label" for="id_username">Utilisateur</label>
+            <input type="text" name="username" class="form-control" id="id_username" required autofocus>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="id_password">Mot de passe</label>
+            <input type="password" name="password" class="form-control" id="id_password" required>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">Entrer</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

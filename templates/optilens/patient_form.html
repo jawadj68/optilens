@@ -1,0 +1,24 @@
+{% extends "optilens/base.html" %}
+{% block browser_tab %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block content %}
+{% include "optilens/_nav.html" %}
+<form method="post" class="card shadow-sm p-4">
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+  <div class="row g-3">
+    {% for field in form %}
+    <div class="col-md-6">
+      <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field }}
+      {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+      {% for err in field.errors %}<div class="text-danger small">{{ err }}</div>{% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+  <div class="mt-4 d-flex gap-2">
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    {% if patient %}<a class="btn btn-outline-secondary" href="{% url 'optilens:patient_detail' pk=patient.pk %}">Annuler</a>{% else %}<a class="btn btn-outline-secondary" href="{% url 'optilens:patient_list' %}">Annuler</a>{% endif %}
+  </div>
+</form>
+{% endblock %}

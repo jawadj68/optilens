@@ -1,0 +1,48 @@
+{% extends "optilens/base.html" %}
+{% block browser_tab %}Import{% endblock %}
+{% block page_title %}Import FileMaker (CSV){% endblock %}
+{% block content %}
+{% include "optilens/_nav.html" %}
+<div class="row g-4">
+  <div class="col-lg-7">
+    <form method="post" enctype="multipart/form-data" class="card shadow-sm p-4">
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="mb-3">
+        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+        {% for err in field.errors %}<div class="text-danger small">{{ err }}</div>{% endfor %}
+      </div>
+      {% endfor %}
+      <button type="submit" class="btn btn-primary">Lancer l'import</button>
+    </form>
+  </div>
+  <div class="col-lg-5">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="h6">Étapes FileMaker 5</h2>
+        <ol class="small mb-0">
+          <li>Ouvrir <code>PATIEN~1 Copy.FP5</code> sur le PC XP ou via FileMaker Pro 5.</li>
+          <li>Afficher la liste des patients (layout principal).</li>
+          <li><strong>Fichier → Exporter les enregistrements</strong> → format <strong>CSV</strong> ou <strong>Tabulations</strong>.</li>
+          <li>Cochez <em>utiliser les noms de champs comme en-tête de colonne</em>.</li>
+          <li>Importez ici en laissant <strong>Simulation</strong> coché pour tester, puis décochez pour enregistrer.</li>
+        </ol>
+        <p class="small text-muted mt-3 mb-0">CLI (<code>C:\Optilens</code>) : <code>python manage.py import_optilens_patients export.csv --commit</code></p>
+      </div>
+    </div>
+    {% if result and result.headers %}
+    <div class="card shadow-sm mt-3">
+      <div class="card-header small">Colonnes détectées</div>
+      <div class="card-body small"><code>{{ result.headers|join:", " }}</code></div>
+    </div>
+    {% endif %}
+    {% if result and result.errors %}
+    <div class="alert alert-warning mt-3 small">
+      {% for e in result.errors %}<div>{{ e }}</div>{% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

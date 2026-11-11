@@ -1,0 +1,52 @@
+{% extends "optilens/base.html" %}
+{% block browser_tab %}Dossier {{ record.dossier_nr }}{% endblock %}
+{% block page_title %}Fiche clinique — dossier {{ record.dossier_nr }}{% endblock %}
+{% block content %}
+{% include "optilens/_nav.html" %}
+<div class="mb-3">
+  {% if record.patient_id %}
+  <a class="btn btn-outline-secondary btn-sm" href="{% url 'optilens:patient_detail' pk=record.patient_id %}">
+    <i class="bi bi-arrow-left"></i> {{ record.patient.full_name }}
+  </a>
+  {% else %}
+  <a class="btn btn-outline-secondary btn-sm" href="{% url 'optilens:clinical_unmatched_list' %}?q={{ record.patient_name_snapshot|urlencode }}">
+    <i class="bi bi-arrow-left"></i> Fiches non liées
+  </a>
+  <span class="badge text-bg-warning ms-2">Sans patient lié</span>
+  {% endif %}
+</div>
+<div class="card shadow-sm mb-3">
+  <div class="card-body">
+    {% if record.patient_id %}
+    <p class="mb-1"><span class="text-muted">Patient:</span> <strong>{{ record.patient.full_name }}</strong> (Nb {{ record.patient.patient_nb|default:"—" }})</p>
+    {% else %}
+    <p class="mb-1"><span class="text-muted">Patient:</span> <em class="text-muted">non lié</em> — <a href="{% url 'optilens:patient_list' %}?q={{ record.patient_name_snapshot|urlencode }}">chercher « {{ record.patient_name_snapshot }} »</a></p>
+    {% endif %}
+    <p class="mb-1"><span class="text-muted">Nom sur fiche:</span> {{ record.patient_name_snapshot|default:"—" }}</p>
+    <p class="mb-0"><span class="text-muted">Source:</span> {{ record.get_source_display }} — {{ record.record_date|default:"date inconnue" }}</p>
+  </div>
+</div>
+{% if record.summary %}
+<div class="card shadow-sm mb-3">
+  <div class="card-header fw-semibold">Résumé</div>
+  <div class="card-body"><pre class="mb-0 small" style="white-space: pre-wrap;">{{ record.summary }}</pre></div>
+</div>
+{% endif %}
+<div class="card shadow-sm">
+  <div class="card-header fw-semibold">Champs importés (CS)</div>
+  <div class="card-body p-0">
+    <table class="table table-sm mb-0">
+      <tbody>
+        {% for key, value in record.data.items %}
+        {% if value %}
+        <tr>
+          <th class="text-muted small" style="width: 35%;">{{ key }}</th>
+          <td class="small">{{ value }}</td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

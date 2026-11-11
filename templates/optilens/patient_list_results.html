@@ -1,0 +1,59 @@
+<p class="text-muted small mb-2" id="patient-counts">
+  <strong>{{ filtered_count }}</strong> affiché(s)
+  {% if q %} (filtré{% if filtered_count != total_patients %}, sur <strong>{{ total_patients }}</strong> au total{% endif %}){% else %}
+  — <strong>{{ total_patients }}</strong> patient(s) au total
+  {% endif %}
+</p>
+<div class="table-responsive">
+  <table class="table table-hover mb-0">
+    <thead>
+      <tr>
+        <th>Nb</th>
+        <th>Nom</th>
+        <th>Téléphone</th>
+        <th>Région</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="patient-table-body">
+      {% for p in page %}
+      <tr>
+        <td class="text-muted">{% if p.patient_nb %}{{ p.patient_nb }}{% else %}—{% endif %}</td>
+        <td>{{ p.full_name }}</td>
+        <td>{{ p.phone|default:"—" }}</td>
+        <td>{{ p.region|default:"—" }}</td>
+        <td class="text-end">
+          <a class="btn btn-sm btn-outline-primary" href="{% url 'optilens:patient_detail' pk=p.pk %}">Ouvrir</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5" class="text-muted p-4">
+          {% if q %}Aucun résultat pour « {{ q }} ».{% else %}
+          Aucun patient. <a href="{% url 'optilens:import_csv' %}">Importer depuis FileMaker</a>.
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if page.paginator.num_pages > 1 %}
+<nav class="mt-3" id="patient-pagination" aria-label="Pagination patients">
+  <ul class="pagination mb-0">
+    {% if page.has_previous %}
+    <li class="page-item">
+      <a class="page-link patient-page-link" href="#" data-page="{{ page.previous_page_number }}">Précédent</a>
+    </li>
+    {% endif %}
+    <li class="page-item disabled"><span class="page-link">Page {{ page.number }} / {{ page.paginator.num_pages }}</span></li>
+    {% if page.has_next %}
+    <li class="page-item">
+      <a class="page-link patient-page-link" href="#" data-page="{{ page.next_page_number }}">Suivant</a>
+    </li>
+    {% endif %}
+  </ul>
+</nav>
+{% else %}
+<nav class="mt-3 d-none" id="patient-pagination"></nav>
+{% endif %}

@@ -1,0 +1,51 @@
+{% extends "optilens/base.html" %}
+{% block browser_tab %}Séances{% endblock %}
+{% block page_title %}Séances{% endblock %}
+{% block content %}
+{% include "optilens/_nav.html" %}
+<p class="text-muted small">
+  Séances importées depuis <strong>SEANCE~1.FP5</strong> (lien patient via champ <strong>Nb</strong>).
+</p>
+<div class="mb-2" style="max-width: 32rem;">
+  <label class="form-label small text-muted mb-1" for="visit-search">Recherche</label>
+  <input type="search" id="visit-search" class="form-control" value="{{ q }}" placeholder="Nom, Nb, traitement, lentilles…" autocomplete="off">
+</div>
+<div class="card shadow-sm">
+  <div class="card-body p-3" id="visit-list-results">
+    {% include "optilens/visit_list_results.html" %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const input = document.getElementById("visit-search");
+  const panel = document.getElementById("visit-list-results");
+  if (!input || !panel) return;
+  let timer = null;
+  let page = 1;
+  function fetchResults() {
+    const params = new URLSearchParams({ partial: "1", q: input.value.trim() });
+    if (page > 1) params.set("page", String(page));
+    fetch("{% url 'optilens:visit_list' %}?" + params.toString(), {
+      headers: { "X-Requested-With": "XMLHttpRequest" },
+    }).then(function (r) { return r.text(); }).then(function (html) {
+      panel.innerHTML = html;
+      panel.querySelectorAll(".visit-page-link").forEach(function (a) {
+        a.addEventListener("click", function (e) {
+          e.preventDefault();
+          page = parseInt(a.dataset.page, 10) || 1;
+          fetchResults();
+        });
+      });
+    });
+  }
+  input.addEventListener("input", function () {
+    page = 1;
+    clearTimeout(timer);
+    timer = setTimeout(fetchResults, 250);
+  });
+});
+</script>
+{% endblock %}

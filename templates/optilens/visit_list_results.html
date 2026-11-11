@@ -1,0 +1,56 @@
+<p class="text-muted small mb-2">
+  <strong>{{ filtered_count }}</strong> séance(s) affichée(s)
+  {% if not q %} — <strong>{{ total_visits }}</strong> au total{% endif %}
+</p>
+<div class="table-responsive">
+  <table class="table table-hover mb-0 table-sm">
+    <thead>
+      <tr>
+        <th>Nb ligne</th>
+        <th>Patient</th>
+        <th>Nb patient</th>
+        <th>Date</th>
+        <th>Traitement</th>
+        <th>Lentilles</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for v in page %}
+      <tr>
+        <td class="text-muted">{{ v.visit_nb|default:"—" }}</td>
+        <td>{{ v.patient.full_name }}</td>
+        <td>{{ v.patient.patient_nb|default:"—" }}</td>
+        <td>{{ v.visit_date|default:"—" }}</td>
+        <td>{{ v.treatment|truncatechars:40|default:"—" }}</td>
+        <td class="small">{{ v.lens_prescription|truncatechars:50|default:"—" }}</td>
+        <td class="text-end">
+          <a class="btn btn-sm btn-outline-primary" href="{% url 'optilens:patient_detail' pk=v.patient_id %}">Fiche</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="6" class="text-muted p-4">
+          {% if q %}Aucune séance pour « {{ q }} ».{% else %}
+          Aucune séance importée. Lancez <code>python manage.py import_optilens_visits --commit</code>
+          ou copiez <strong>SEANCE.fp5</strong> depuis l’ancien PC.
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if page.paginator.num_pages > 1 %}
+<nav class="mt-3">
+  <ul class="pagination mb-0">
+    {% if page.has_previous %}
+    <li class="page-item"><a class="page-link visit-page-link" href="#" data-page="{{ page.previous_page_number }}">Précédent</a></li>
+    {% endif %}
+    <li class="page-item disabled"><span class="page-link">Page {{ page.number }} / {{ page.paginator.num_pages }}</span></li>
+    {% if page.has_next %}
+    <li class="page-item"><a class="page-link visit-page-link" href="#" data-page="{{ page.next_page_number }}">Suivant</a></li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}

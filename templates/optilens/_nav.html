@@ -1,0 +1,6 @@
+<nav class="nav nav-pills gap-2 mb-3 flex-wrap">
+  <a class="nav-link{% if optilens_nav == 'patients' %} active{% endif %}" href="{% url 'optilens:patient_list' %}">Patients</a>
+  <a class="nav-link{% if optilens_nav == 'seances' %} active{% endif %}" href="{% url 'optilens:visit_list' %}">Séances</a>
+  <a class="nav-link{% if optilens_nav == 'clinical_unmatched' %} active{% endif %}" href="{% url 'optilens:clinical_unmatched_list' %}">Fiches non liées</a>
+  <a class="nav-link{% if optilens_nav == 'import' %} active{% endif %}" href="{% url 'optilens:import_csv' %}">Import CSV</a>
+</nav>

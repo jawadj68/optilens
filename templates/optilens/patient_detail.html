@@ -1,0 +1,102 @@
+{% extends "optilens/base.html" %}
+{% block browser_tab %}{{ patient.full_name }}{% endblock %}
+{% block page_title %}{{ patient.full_name }}{% endblock %}
+{% block content %}
+{% include "optilens/_nav.html" %}
+<div class="d-flex gap-2 mb-3 flex-wrap">
+  <a class="btn btn-outline-secondary btn-sm" href="{% url 'optilens:patient_list' %}"><i class="bi bi-arrow-left"></i> Liste</a>
+  <a class="btn btn-primary btn-sm" href="{% url 'optilens:patient_edit' pk=patient.pk %}">Modifier</a>
+  <a class="btn btn-success btn-sm" href="{% url 'optilens:patient_add_visit' pk=patient.pk %}">Nouvelle séance</a>
+</div>
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold">Coordonnées</div>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item d-flex justify-content-between">
+          <span class="text-muted">Nb (FileMaker)</span>
+          <span class="fw-semibold">{% if patient.patient_nb %}{{ patient.patient_nb }}{% else %}—{% endif %}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Sexe</span><span>{{ patient.get_sex_display|default:"—" }}</span></li>
+        <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Téléphone</span><span>{{ patient.phone|default:"—" }}</span></li>
+        <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Profession</span><span>{{ patient.profession|default:"—" }}</span></li>
+        <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Nom du père</span><span>{{ patient.father_name|default:"—" }}</span></li>
+        <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Région</span><span>{{ patient.region|default:"—" }}</span></li>
+        <li class="list-group-item"><span class="text-muted d-block small">Adresse</span>{{ patient.address|linebreaksbr|default:"—" }}</li>
+      </ul>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold">Dossier médical (résumé)</div>
+      <div class="card-body">
+        <p class="mb-2"><span class="text-muted small">Antécédents</span><br>{{ patient.antecedents|linebreaksbr|default:"—" }}</p>
+        <p class="mb-2"><span class="text-muted small">Facteurs de risque</span><br>{{ patient.risk_factors|linebreaksbr|default:"—" }}</p>
+        <p class="mb-2"><span class="text-muted small">Loisirs</span><br>{{ patient.loisirs|linebreaksbr|default:"—" }}</p>
+        <p class="mb-0"><span class="text-muted small">Remarques</span><br>{{ patient.notes|linebreaksbr|default:"—" }}</p>
+        {% if patient.archive_notes %}
+        <hr>
+        <p class="mb-0"><span class="text-muted small">Archive (import)</span><br>{{ patient.archive_notes|linebreaksbr }}</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% if clinical_count %}
+<h2 class="h5 mt-4 mb-2">Fiches cliniques CS ({{ clinical_count }})</h2>
+<div class="card shadow-sm mb-4">
+  <div class="table-responsive">
+    <table class="table table-sm mb-0">
+      <thead>
+        <tr>
+          <th>Nr. dossier</th>
+          <th>Date</th>
+          <th>Source</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cr in clinical_records %}
+        <tr>
+          <td>{{ cr.dossier_nr }}</td>
+          <td>{{ cr.record_date|default:"—" }}</td>
+          <td>{{ cr.get_source_display }}</td>
+          <td class="text-end">
+            <a class="btn btn-sm btn-outline-secondary" href="{% url 'optilens:clinical_record_detail' pk=cr.pk %}">Voir fiche</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+<h2 class="h5 mt-4 mb-2">Séances ({{ visit_count }})</h2>
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table mb-0">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Traitement / lentilles</th>
+          <th>Acompte</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in visits %}
+        <tr>
+          <td>
+            {% if v.visit_date %}{{ v.visit_date }}{% else %}—{% endif %}
+            {% if v.visit_nb %}<br><small class="text-muted">Nb {{ v.visit_nb }}</small>{% endif %}
+          </td>
+          <td>{{ v.treatment }}{% if v.lens_prescription %}<br><small class="text-muted">{{ v.lens_prescription }}</small>{% endif %}</td>
+          <td>{{ v.deposit|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3" class="text-muted">Aucune séance enregistrée.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

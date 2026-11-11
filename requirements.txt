@@ -1,0 +1,7 @@
+Django==6.0.7
+python-dotenv==1.2.2
+PyYAML>=3.11
+parsedatetime>=1.4
+psycopg2-binary>=2.5.4
+# Local clone: git clone https://github.com/qwesda/fp5dump.git tools/fp5dump
+-e ./tools/fp5dump

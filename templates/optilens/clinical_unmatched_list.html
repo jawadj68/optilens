@@ -1,0 +1,61 @@
+{% extends "optilens/base.html" %}
+{% block browser_tab %}Fiches non liées{% endblock %}
+{% block page_title %}Fiches CS sans patient{% endblock %}
+{% block content %}
+{% include "optilens/_nav.html" %}
+<p class="text-muted mb-3">
+  {{ total_unmatched }} fiche(s) importée(s) sans correspondance patient
+  {% if q %} — {{ filtered_count }} après filtre{% endif %}
+</p>
+<form class="row g-2 mb-3" method="get">
+  <div class="col-auto flex-grow-1">
+    <input class="form-control" type="search" name="q" value="{{ q }}" placeholder="Nom, dossier, mot-clé…" autofocus>
+  </div>
+  <div class="col-auto">
+    <button class="btn btn-primary" type="submit">Rechercher</button>
+  </div>
+</form>
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-sm mb-0">
+      <thead>
+        <tr>
+          <th>Nr. dossier</th>
+          <th>Nom sur fiche</th>
+          <th>Date</th>
+          <th>Source</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cr in page.object_list %}
+        <tr>
+          <td>{{ cr.dossier_nr }}</td>
+          <td>{{ cr.patient_name_snapshot|default:"—" }}</td>
+          <td>{{ cr.record_date|default:"—" }}</td>
+          <td>{{ cr.get_source_display }}</td>
+          <td class="text-end">
+            <a class="btn btn-sm btn-outline-secondary" href="{% url 'optilens:clinical_record_detail' pk=cr.pk %}">Voir</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-muted p-3">Aucune fiche.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% if page.has_other_pages %}
+<nav class="mt-3">
+  <ul class="pagination pagination-sm">
+    {% if page.has_previous %}
+    <li class="page-item"><a class="page-link" href="?q={{ q|urlencode }}&page={{ page.previous_page_number }}">Préc.</a></li>
+    {% endif %}
+    <li class="page-item disabled"><span class="page-link">{{ page.number }} / {{ page.paginator.num_pages }}</span></li>
+    {% if page.has_next %}
+    <li class="page-item"><a class="page-link" href="?q={{ q|urlencode }}&page={{ page.next_page_number }}">Suiv.</a></li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+{% endblock %}
